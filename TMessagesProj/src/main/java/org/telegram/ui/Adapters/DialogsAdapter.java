@@ -177,7 +177,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter {
         boolean hasContacts = false;
         if (hasHints) {
             count += 2 + messagesController.hintDialogs.size();
-        } else if (dialogsType == 0 && messagesController.dialogs_dict.size() <= 10 && folderId == 0 && messagesController.isDialogsEndReached(folderId)) {
+        } else if (dialogsType == 1 && messagesController.dialogs_dict.size() <= 10 && folderId == 0 && messagesController.isDialogsEndReached(folderId)) {
             if (ContactsController.getInstance(currentAccount).contacts.isEmpty() && !ContactsController.getInstance(currentAccount).doneLoadingContacts) {
                 onlineContacts = null;
                 if (BuildVars.LOGS_ENABLED) {
@@ -221,7 +221,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter {
         }
         if (folderId == 0 && dialogsCount != 0) {
             count++;
-            if (dialogsCount > 10 && dialogsType == 0) {
+            if (dialogsCount > 10 && dialogsType == 1) {
                 count++;
             }
         }
@@ -502,6 +502,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter {
         return new RecyclerListView.Holder(view);
     }
 
+    //-1729753338
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int i) {
         switch (holder.getItemViewType()) {
@@ -511,7 +512,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter {
                 TLRPC.Dialog nextDialog = (TLRPC.Dialog) getItem(i + 1);
                 cell.useSeparator = nextDialog != null;
                 cell.fullSeparator = dialog.pinned && nextDialog != null && !nextDialog.pinned;
-                if (dialogsType == 0) {
+                if (dialogsType == 1) {
                     if (AndroidUtilities.isTablet()) {
                         cell.setDialogSelected(dialog.id == openedDialogId);
                     }
@@ -648,7 +649,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter {
                 i -= 1;
             }
         }
-        if (folderId == 0 && dialogsCount > 10 && i == currentCount - 2 && dialogsType == 0) {
+        if (folderId == 0 && dialogsCount > 10 && i == currentCount - 2 && dialogsType == 1) {
             return 11;
         }
         int size = parentFragment.getDialogsArray(currentAccount, dialogsType, folderId, dialogsListFrozen).size();
@@ -838,7 +839,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter {
 
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             int size = parentFragment.getDialogsArray(currentAccount, dialogsType, folderId, dialogsListFrozen).size();
-            boolean hasArchive = dialogsType == 0 && MessagesController.getInstance(currentAccount).dialogs_dict.get(DialogObject.makeFolderDialogId(1)) != null;
+            boolean hasArchive = dialogsType == 1 && MessagesController.getInstance(currentAccount).dialogs_dict.get(DialogObject.makeFolderDialogId(1)) != null;
             View parent = (View) getParent();
             int height;
             int paddingTop = parent.getPaddingTop();

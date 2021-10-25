@@ -4,3 +4,6 @@ build/
 obj/
 *.iml
 local.properties
+
+*.o
+/TMessagesProj/.cxx/

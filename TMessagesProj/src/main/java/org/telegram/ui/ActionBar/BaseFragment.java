@@ -19,6 +19,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
@@ -293,6 +294,7 @@ public abstract class BaseFragment {
     }
 
     public void onResume() {
+        Log.d("CUSTOM",this.getClass().getName());
         isPaused = false;
     }
 
