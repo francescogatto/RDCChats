@@ -21,13 +21,14 @@ import android.os.SystemClock;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
 import android.util.SparseIntArray;
 
 import androidx.collection.LongSparseArray;
 import androidx.core.app.NotificationManagerCompat;
+
+import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.messenger.support.LongSparseIntArray;
@@ -4724,6 +4725,13 @@ public class MessagesController extends BaseController implements NotificationCe
         if (dialogs == null) {
             return new ArrayList<>();
         }
+       /* for(TLRPC.Dialog a : dialogs) {
+            if(MessagesController.getInstance(currentAccount).getChat(-a.id)!=null) {
+                Log.d("CUSTOM", "" + a.id);
+
+                Log.d("CUSTOM", "" + MessagesController.getInstance(currentAccount).getChat(-a.id).title);
+            }
+        }*/
         return dialogs;
     }
 

@@ -2062,7 +2062,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (BuildVars.DEBUG_VERSION) {
                     actionBar.setTitle("RDC Chat Beta");
                 } else {
-                    actionBar.setTitle(LocaleController.getString("AppName", R.string.AppName));
+                    actionBar.setTitle("RDC Chat");
                 }
             }
             if (folderId == 0) {
@@ -6388,6 +6388,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         setDialogsListFrozen(frozen, true);
     }
 
+    public Long rdcappsupport = -1330520480L;
+    public Long rdc = -1202554501L;
+    public Long rdcNews = -1729753338L;
     @NonNull
     public ArrayList<TLRPC.Dialog> getDialogsArray(int currentAccount, int dialogsType, int folderId, boolean frozen) {
         if (frozen && frozenDialogsList != null) {
@@ -6422,8 +6425,11 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             toFilter = new ArrayList<>();
         }
 
-        return toFilter.stream().filter(c -> c.id == -1729753338).collect(Collectors.toCollection(ArrayList::new));
+        return toFilter.stream().filter(c -> c.id == rdcNews || c.id == rdcappsupport || c.id == rdc ).collect(Collectors.toCollection(ArrayList::new));
     }
+
+
+
 
     public void setSideMenu(RecyclerView recyclerView) {
         sideMenu = recyclerView;
