@@ -60,10 +60,12 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.URLSpan;
+import android.util.DisplayMetrics;
 import android.util.Property;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
 import android.util.TypedValue;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
@@ -99,6 +101,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.util.Log;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
@@ -818,6 +823,48 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         default void onReport() {
 
         }
+    }
+
+
+    private static final String AD_UNIT_ID = "ca-app-pub-3940256099942544/9214589741";
+    private FrameLayout adContainerView;
+    private FrameLayout adContainerViewPinned;
+
+    private AdView adView;
+
+    private void loadBanner(FrameLayout container) {
+        // Create an ad request.
+        adView = new AdView(getParentActivity());
+        adView.setAdUnitId(AD_UNIT_ID);
+        container.removeAllViews();
+        container.addView(adView);
+
+        AdSize adSize = getAdSize(container);
+        adView.setAdSize(adSize);
+
+        AdRequest adRequest = new AdRequest.Builder().build();
+
+        // Start loading the ad in the background.
+        adView.loadAd(adRequest);
+    }
+
+    private AdSize getAdSize(FrameLayout container) {
+        // Determine the screen width (less decorations) to use for the ad width.
+        Display display = getParentActivity().getWindowManager().getDefaultDisplay();
+        DisplayMetrics outMetrics = new DisplayMetrics();
+        display.getMetrics(outMetrics);
+
+        float density = outMetrics.density;
+
+        float adWidthPixels = container.getWidth();
+
+        // If the ad hasn't been laid out, default to the full screen width.
+        if (adWidthPixels == 0) {
+            adWidthPixels = outMetrics.widthPixels;
+        }
+
+        int adWidth = (int) (adWidthPixels / density);
+        return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(getParentActivity(), adWidth);
     }
 
     ForwardingPreviewView forwardingPreviewView;
@@ -5090,7 +5137,17 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
             }
         });
+
         contentView.addView(chatListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        adContainerView = new FrameLayout(context);
+        contentView.addView(adContainerView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+        adContainerView.bringToFront();
+        adContainerView.post(new Runnable() {
+            @Override
+            public void run() {
+                loadBanner(adContainerView);
+            }
+        });
         chatListView.setOnItemLongClickListener(onItemLongClickListener);
         chatListView.setOnItemClickListener(onItemClickListener);
         chatListView.setOnScrollListener(new RecyclerView.OnScrollListener() {
@@ -5374,7 +5431,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             pinnedMessageView.setVisibility(View.GONE);
             pinnedMessageView.setBackgroundResource(R.drawable.blockpanel);
             pinnedMessageView.getBackground().mutate().setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_chat_topPanelBackground), PorterDuff.Mode.MULTIPLY));
-            contentView.addView(pinnedMessageView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 50, Gravity.TOP | Gravity.LEFT));
+
+            contentView.addView(pinnedMessageView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 100, Gravity.TOP | Gravity.LEFT));
             pinnedMessageView.setOnClickListener(v -> {
                 wasManualScroll = true;
                 if (isThreadChat()) {
@@ -5400,20 +5458,29 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     updateMessagesVisiblePart(false);
                 }
             });
-
+            adContainerViewPinned = new FrameLayout(context);
+            pinnedMessageView.addView(adContainerViewPinned, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,Gravity.TOP, 0, 0, 0, 0));
+            adContainerViewPinned.bringToFront();
+            adContainerView.setVisibility(View.GONE);
+            adContainerViewPinned.post(new Runnable() {
+                @Override
+                public void run() {
+                    loadBanner(adContainerViewPinned);
+                }
+            });
             View selector = new View(context);
             selector.setBackground(Theme.getSelectorDrawable(false));
-            pinnedMessageView.addView(selector, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP, 0, 0, 0, 2));
+            pinnedMessageView.addView(selector, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP, 0, 50, 0, 2));
 
             pinnedLineView = new PinnedLineView(context, themeDelegate);
-            pinnedMessageView.addView(pinnedLineView, LayoutHelper.createFrame(2, 48, Gravity.LEFT | Gravity.TOP, 8, 0, 0, 0));
-
+            pinnedMessageView.addView(pinnedLineView, LayoutHelper.createFrame(2, 48, Gravity.LEFT | Gravity.TOP, 8, 50, 0, 0));
             pinnedCounterTextView = new NumberTextView(context);
             pinnedCounterTextView.setAddNumber();
             pinnedCounterTextView.setTextSize(14);
             pinnedCounterTextView.setTextColor(getThemedColor(Theme.key_chat_topPanelTitle));
             pinnedCounterTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-            pinnedMessageView.addView(pinnedCounterTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, Gravity.TOP | Gravity.LEFT, 18, 7, 44, 0));
+            pinnedMessageView.addView(pinnedCounterTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, Gravity.TOP | Gravity.LEFT, 18, 57, 44, 0));
+
 
             for (int a = 0; a < 2; a++) {
                 pinnedNameTextView[a] = new SimpleTextView(context) {
@@ -5432,7 +5499,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 pinnedNameTextView[a].setTextSize(14);
                 pinnedNameTextView[a].setTextColor(getThemedColor(Theme.key_chat_topPanelTitle));
                 pinnedNameTextView[a].setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-                pinnedMessageView.addView(pinnedNameTextView[a], LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, Gravity.TOP | Gravity.LEFT, 18, 7.3f, 44, 0));
+                pinnedMessageView.addView(pinnedNameTextView[a], LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, Gravity.TOP | Gravity.LEFT, 18, 57.3f, 44, 0));
 
                 pinnedMessageTextView[a] = new SimpleTextView(context) {
                     @Override
@@ -5449,11 +5516,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 };
                 pinnedMessageTextView[a].setTextSize(14);
                 pinnedMessageTextView[a].setTextColor(getThemedColor(Theme.key_chat_topPanelMessage));
-                pinnedMessageView.addView(pinnedMessageTextView[a], LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, Gravity.TOP | Gravity.LEFT, 18, 25.3f, 44, 0));
+                pinnedMessageView.addView(pinnedMessageTextView[a], LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, Gravity.TOP | Gravity.LEFT, 18, 75.3f, 44, 0));
 
                 pinnedMessageImageView[a] = new BackupImageView(context);
                 pinnedMessageImageView[a].setRoundRadius(AndroidUtilities.dp(2));
-                pinnedMessageView.addView(pinnedMessageImageView[a], LayoutHelper.createFrame(32, 32, Gravity.TOP | Gravity.LEFT, 17, 8, 0, 0));
+                pinnedMessageView.addView(pinnedMessageImageView[a], LayoutHelper.createFrame(32, 32, Gravity.TOP | Gravity.LEFT, 17, 58, 0, 0));
                 if (a == 1) {
                     pinnedMessageTextView[a].setVisibility(View.INVISIBLE);
                     pinnedNameTextView[a].setVisibility(View.INVISIBLE);
@@ -5473,7 +5540,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (Build.VERSION.SDK_INT >= 21) {
                 pinnedListButton.setBackgroundDrawable(Theme.createSelectorDrawable(getThemedColor(Theme.key_inappPlayerClose) & 0x19ffffff));
             }
-            pinnedMessageView.addView(pinnedListButton, LayoutHelper.createFrame(36, 48, Gravity.RIGHT | Gravity.TOP, 0, 0, 7, 0));
+            pinnedMessageView.addView(pinnedListButton, LayoutHelper.createFrame(36, 48, Gravity.RIGHT | Gravity.TOP, 0, 50, 7, 0));
             pinnedListButton.setOnClickListener(v -> openPinnedMessagesList(false));
 
             closePinned = new ImageView(context);
@@ -5487,7 +5554,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             pinnedProgress.setSize(AndroidUtilities.dp(16));
             pinnedProgress.setStrokeWidth(2f);
             pinnedProgress.setProgressColor(getThemedColor(Theme.key_chat_topPanelLine));
-            pinnedMessageView.addView(pinnedProgress, LayoutHelper.createFrame(36, 48, Gravity.RIGHT | Gravity.TOP, 0, 0, 2, 0));
+            pinnedMessageView.addView(pinnedProgress, LayoutHelper.createFrame(36, 48, Gravity.RIGHT | Gravity.TOP, 0, 50, 2, 0));
 
             if (threadMessageId != 0) {
                 closePinned.setVisibility(View.GONE);
@@ -5495,7 +5562,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             if (Build.VERSION.SDK_INT >= 21) {
                 closePinned.setBackgroundDrawable(Theme.createSelectorDrawable(getThemedColor(Theme.key_inappPlayerClose) & 0x19ffffff, 1, AndroidUtilities.dp(14)));
             }
-            pinnedMessageView.addView(closePinned, LayoutHelper.createFrame(36, 48, Gravity.RIGHT | Gravity.TOP, 0, 0, 2, 0));
+            pinnedMessageView.addView(closePinned, LayoutHelper.createFrame(36, 48, Gravity.RIGHT | Gravity.TOP, 0, 50, 2, 0));
             closePinned.setOnClickListener(v -> {
                 if (getParentActivity() == null) {
                     return;
@@ -17896,6 +17963,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                 invalidateMessagesVisiblePart();
                             }
                         });
+
                         pinnedMessageView.setVisibility(View.VISIBLE);
                         pinnedMessageViewAnimator = new AnimatorSet();
                         pinnedMessageViewAnimator.playTogether(animator);
@@ -17917,6 +17985,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         });
                         pinnedMessageViewAnimator.start();
                     } else {
+
                         pinnedMessageEnterOffset = 0;
                         invalidateChatListViewTopPadding();
                         invalidateMessagesVisiblePart();
