@@ -73,9 +73,13 @@ import com.google.android.gms.ads.RequestConfiguration;
 import com.google.android.gms.ads.initialization.InitializationStatus;
 import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.appindexing.Action;
 import com.google.firebase.appindexing.FirebaseUserActions;
 import com.google.firebase.appindexing.builders.AssistActionBuilder;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
@@ -260,6 +264,24 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
             @Override
             public void onInitializationComplete(InitializationStatus initializationStatus) {
                 Log.d("ADS", "Ads loaded");
+            }
+        });
+        FirebaseRemoteConfig firebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
+        FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
+                .setMinimumFetchIntervalInSeconds(60)
+                .build();
+        firebaseRemoteConfig.setConfigSettingsAsync(configSettings);
+        firebaseRemoteConfig.fetchAndActivate().addOnCompleteListener(this, new OnCompleteListener<Boolean>() {
+            @Override
+            public void onComplete(@NonNull Task<Boolean> task) {
+                if (task.isSuccessful()) {
+                    boolean updated = task.getResult();
+                    Log.d("CUSTOM", "Config params updated: " + updated);
+                   // Toast.makeText(LaunchActivity.this, "Fetch and activate succeeded", Toast.LENGTH_SHORT).show();
+
+                } else {
+                   // Toast.makeText(LaunchActivity.this, "Fetch failed", Toast.LENGTH_SHORT).show();
+                }
             }
         });
 

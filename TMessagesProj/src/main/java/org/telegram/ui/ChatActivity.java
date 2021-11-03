@@ -5461,7 +5461,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             adContainerViewPinned = new FrameLayout(context);
             pinnedMessageView.addView(adContainerViewPinned, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT,Gravity.TOP, 0, 0, 0, 0));
             adContainerViewPinned.bringToFront();
-            adContainerView.setVisibility(View.GONE);
+
             adContainerViewPinned.post(new Runnable() {
                 @Override
                 public void run() {
@@ -7604,6 +7604,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             chatInviteRunnable = null;
                         }
                         showBottomOverlayProgress(true, true);
+                        //1386066237
                         getMessagesController().addUserToChat(currentChat.id, getUserConfig().getCurrentUser(), 0, null, ChatActivity.this, null);
                         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.closeSearchByActiveAction);
 
@@ -17806,6 +17807,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     public void onAnimationEnd(Animator animation) {
                         if (pinnedMessageViewAnimator != null && pinnedMessageViewAnimator.equals(animation)) {
                             pinnedMessageView.setVisibility(View.GONE);
+                            adContainerView.setVisibility(View.VISIBLE);
                             pinnedMessageViewAnimator = null;
                         }
                     }
@@ -17821,6 +17823,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             } else {
                 pinnedMessageEnterOffset = -AndroidUtilities.dp(50);
                 pinnedMessageView.setVisibility(View.GONE);
+                adContainerView.setVisibility(View.VISIBLE);
                 chatListView.invalidate();
             }
             return true;

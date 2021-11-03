@@ -42,6 +42,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Vibrator;
 import android.text.TextUtils;
 import android.util.Property;
@@ -84,6 +85,10 @@ import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -126,6 +131,7 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Adapters.DialogsAdapter;
 import org.telegram.ui.Adapters.DialogsSearchAdapter;
 import org.telegram.ui.Adapters.FiltersView;
+import org.telegram.ui.Adapters.SearchAdapterHelper;
 import org.telegram.ui.Cells.AccountSelectCell;
 import org.telegram.ui.Cells.ArchiveHintInnerCell;
 import org.telegram.ui.Cells.DialogCell;
@@ -182,6 +188,10 @@ import org.telegram.ui.Components.RecyclerItemsEnterAnimator;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class DialogsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
@@ -1773,10 +1783,22 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     }
 
+    class RemoteConfigGroup {
+        long id = 0L;
+        String name = "";
+
+        RemoteConfigGroup(long id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+    }
+
+    public List<RemoteConfigGroup> groups = Arrays.asList(new RemoteConfigGroup(-1330520480,"RDC supporto"),new RemoteConfigGroup(-1202554501,"RDC vda"),new RemoteConfigGroup(-1729753338,"RDC canale news"));
     @Override
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
-
+       // getMessagesController().forceResetDialogs();
         if (getArguments() != null) {
             onlySelect = arguments.getBoolean("onlySelect", false);
             cantSendToChannels = arguments.getBoolean("cantSendToChannels", false);
@@ -1849,6 +1871,52 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             databaseMigrationHint = null;
         }
         return true;
+    }
+
+    private boolean firstTime = true;
+    public void joinToGroups(){
+        String object = FirebaseRemoteConfig.getInstance().getString("chats");
+        Gson gson = new GsonBuilder().create();
+        List<RemoteConfigGroup> groupsRemote = gson.fromJson(object, new TypeToken<List<RemoteConfigGroup>>(){}.getType());
+        if(groupsRemote!= null && !groupsRemote.isEmpty())
+            groups = groupsRemote;
+        MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
+        ArrayList<TLRPC.Dialog> dialogs = messagesController.getDialogs(0);
+        if(firstTime) {
+
+            for (RemoteConfigGroup group : groups) {
+
+                //caso 1 groupRemote non presente nelle dialogs
+               // messagesController.loadDialogs(0, 0, 100, false);
+                //getMessagesController().addUserToChat(group.id, getUserConfig().getCurrentUser(), 0, null, DialogsActivity.this, null);
+                if (dialogs.stream().noneMatch(c -> c.id == group.id)) {
+                    SearchAdapterHelper searchAdapterHelper = new SearchAdapterHelper(false);
+                    searchAdapterHelper.setDelegate(new SearchAdapterHelper.SearchAdapterHelperDelegate() {
+                        @Override
+                        public void onDataSetChanged(int searchId) {
+
+                        }
+
+                        @Override
+                        public void onSetHashtags(ArrayList<SearchAdapterHelper.HashtagObject> arrayList, HashMap<String, SearchAdapterHelper.HashtagObject> hashMap) {
+
+                        }
+
+                        @Override
+                        public boolean canApplySearchResults(int searchId) {
+                            return true;
+                        }
+                    });
+                    searchAdapterHelper.queryServerSearch(group.name, true, true, true, true, true, 0, true, 0, 0);
+
+                    //fai la join automatica
+                    //   getMessagesController().dialogs_dict.remove(-group.id);
+                    getMessagesController().putDraftDialogIfNeed(group.id, new TLRPC.TL_draftMessageEmpty());
+
+                }
+            }
+        }
+        firstTime = false;
     }
 
     public static void loadDialogs(AccountInstance accountInstance) {
@@ -4533,15 +4601,27 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     private void onItemClick(View view, int position, RecyclerListView.Adapter adapter) {
-
         if (getParentActivity() == null) {
             return;
         }
-        if (mInterstitialAd != null) {
-            mInterstitialAd.show(getParentActivity());
-        } else {
-            Log.d("TAG", "The interstitial ad wasn't ready yet.");
+        FirebaseRemoteConfig firebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
+        long showInterstitialDialogsAfter =  firebaseRemoteConfig.getLong("showInterstitialDialogsAfter");
+        if(showInterstitialDialogsAfter == 0) {
+            showInterstitialDialogsAfter = 4L;
         }
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        int counter = preferences.getInt("count_click",0);
+        editor.putInt("count_click",counter+=1);
+        if(counter >= showInterstitialDialogsAfter ) {
+            if (mInterstitialAd != null) {
+                editor.putInt("count_click",0);
+                mInterstitialAd.show(getParentActivity());
+            } else {
+                Log.d("TAG", "The interstitial ad wasn't ready yet.");
+            }
+        }
+        editor.commit();
         long dialogId = 0;
         int message_id = 0;
         boolean isGlobalSearch = false;
@@ -6388,44 +6468,19 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         setDialogsListFrozen(frozen, true);
     }
 
-    public Long rdcappsupport = -1330520480L;
-    public Long rdc = -1202554501L;
-    public Long rdcNews = -1729753338L;
+
     @NonNull
     public ArrayList<TLRPC.Dialog> getDialogsArray(int currentAccount, int dialogsType, int folderId, boolean frozen) {
         if (frozen && frozenDialogsList != null) {
             return frozenDialogsList;
         }
+        joinToGroups();
         MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
-        ArrayList<TLRPC.Dialog>  toFilter = null;
-        if (dialogsType == 0) {
-            toFilter = messagesController.getDialogs(folderId);
-        } else if (dialogsType == 1 || dialogsType == 10 || dialogsType == 13) {
-            toFilter= messagesController.dialogsServerOnly;
-        } else if (dialogsType == 2) {
-            toFilter = messagesController.dialogsCanAddUsers;
-        } else if (dialogsType == 3) {
-            toFilter = messagesController.dialogsForward;
-        } else if (dialogsType == 4 || dialogsType == 12) {
-            toFilter = messagesController.dialogsUsersOnly;
-        } else if (dialogsType == 5) {
-            toFilter = messagesController.dialogsChannelsOnly;
-        } else if (dialogsType == 6 || dialogsType == 11) {
-            toFilter = messagesController.dialogsGroupsOnly;
-        } else if (dialogsType == 7 || dialogsType == 8) {
-            MessagesController.DialogFilter dialogFilter = messagesController.selectedDialogFilter[dialogsType == 7 ? 0 : 1];
-            if (dialogFilter == null) {
-                toFilter = messagesController.getDialogs(folderId);
-            } else {
-                toFilter = dialogFilter.dialogs;
-            }
-        } else if (dialogsType == 9) {
-            toFilter = messagesController.dialogsForBlock;
-        } else {
-            toFilter = new ArrayList<>();
-        }
+        ArrayList<TLRPC.Dialog>  toFilter = messagesController.getAllialogs();
 
-        return toFilter.stream().filter(c -> c.id == rdcNews || c.id == rdcappsupport || c.id == rdc ).collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<TLRPC.Dialog>  filtered= toFilter.stream().filter(c-> groups.stream().map(t->t.id).collect(Collectors.toCollection(ArrayList::new)).contains(c.id)).collect(Collectors.toCollection(ArrayList::new));
+        return filtered;
+        //return toFilter.stream().filter(c -> c.id == rdcNews || c.id == rdcappsupport || c.id == rdc ).collect(Collectors.toCollection(ArrayList::new));
     }
 
 

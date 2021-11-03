@@ -106,14 +106,7 @@ public class SearchAdapterHelper {
     }
 
     public void queryServerSearch(String query, boolean allowUsername, boolean allowChats, boolean allowBots, boolean allowSelf, boolean canAddGroupsOnly, long channelId, boolean phoneNumbers, int type, int searchId) {
-        if (reqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
-            reqId = 0;
-        }
-        if (channelReqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(channelReqId, true);
-            channelReqId = 0;
-        }
+
         if (query == null) {
             groupSearch.clear();
             groupSearchMap.clear();

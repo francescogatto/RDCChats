@@ -4721,7 +4721,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public ArrayList<TLRPC.Dialog> getDialogs(int folderId) {
-        ArrayList<TLRPC.Dialog> dialogs = dialogsByFolder.get(folderId);
+        ArrayList<TLRPC.Dialog> dialogs = allDialogs;//dialogsByFolder.get(folderId);
         if (dialogs == null) {
             return new ArrayList<>();
         }
@@ -4734,6 +4734,12 @@ public class MessagesController extends BaseController implements NotificationCe
         }*/
         return dialogs;
     }
+
+    public ArrayList<TLRPC.Dialog> getAllialogs() {
+        return allDialogs;
+    }
+
+
 
     public int getTotalDialogsCount() {
         int count = 0;
