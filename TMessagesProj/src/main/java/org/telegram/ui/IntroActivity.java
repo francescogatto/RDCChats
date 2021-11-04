@@ -100,18 +100,12 @@ public class IntroActivity extends Activity implements NotificationCenter.Notifi
         titles = new String[]{
                 LocaleController.getString("Page1Title", R.string.Page1Title),
                 LocaleController.getString("Page2Title", R.string.Page2Title),
-                LocaleController.getString("Page3Title", R.string.Page3Title),
-                LocaleController.getString("Page5Title", R.string.Page5Title),
-                LocaleController.getString("Page4Title", R.string.Page4Title),
-                LocaleController.getString("Page6Title", R.string.Page6Title)
+                LocaleController.getString("Page4Title", R.string.Page4Title)
         };
         messages = new String[]{
                 LocaleController.getString("Page1Message", R.string.Page1Message),
                 LocaleController.getString("Page2Message", R.string.Page2Message),
-                LocaleController.getString("Page3Message", R.string.Page3Message),
-                LocaleController.getString("Page5Message", R.string.Page5Message),
-                LocaleController.getString("Page4Message", R.string.Page4Message),
-                LocaleController.getString("Page6Message", R.string.Page6Message)
+                LocaleController.getString("Page4Message", R.string.Page4Message)
         };
 
         ScrollView scrollView = new ScrollView(this);
@@ -614,7 +608,7 @@ public class IntroActivity extends Activity implements NotificationCenter.Notifi
             loadTexture(R.drawable.intro_powerful_star, 18);
             loadTexture(R.drawable.intro_private_door, 19);
             loadTexture(R.drawable.intro_private_screw, 20);
-            loadTexture(R.drawable.intro_tg_plane, 21);
+            loadTexture(R.drawable.ic_new_logo_img, 21);
             loadTexture(R.drawable.intro_tg_sphere, 22);
 
             Intro.setTelegramTextures(textures[22], textures[21]);
