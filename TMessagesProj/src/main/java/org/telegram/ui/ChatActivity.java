@@ -104,6 +104,10 @@ import com.google.android.exoplayer2.util.Log;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
@@ -833,19 +837,26 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private AdView adView;
 
     private void loadBanner(FrameLayout container) {
+        List<DialogsActivity.RemoteConfigGroup> groupsRemote = null;
+            String object = FirebaseRemoteConfig.getInstance().getString("chats");
+            Gson gson = new GsonBuilder().create();
+            groupsRemote = gson.fromJson(object, new TypeToken<List<DialogsActivity.RemoteConfigGroup>>(){}.getType());
         // Create an ad request.
-        adView = new AdView(getParentActivity());
-        adView.setAdUnitId(AD_UNIT_ID);
-        container.removeAllViews();
-        container.addView(adView);
+        try {
+            DialogsActivity.RemoteConfigGroup group = groupsRemote.stream().filter(d -> d.id == dialog_id).findFirst().get();
+            adView = new AdView(getParentActivity());
+            adView.setAdUnitId(group.bannerId);
+            container.removeAllViews();
+            container.addView(adView);
 
-        AdSize adSize = getAdSize(container);
-        adView.setAdSize(adSize);
+            AdSize adSize = getAdSize(container);
+            adView.setAdSize(adSize);
 
-        AdRequest adRequest = new AdRequest.Builder().build();
+            AdRequest adRequest = new AdRequest.Builder().build();
 
-        // Start loading the ad in the background.
-        adView.loadAd(adRequest);
+            // Start loading the ad in the background.
+            adView.loadAd(adRequest);
+        }catch (Exception e){}
     }
 
     private AdSize getAdSize(FrameLayout container) {

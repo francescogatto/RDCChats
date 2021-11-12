@@ -7,3 +7,14 @@ local.properties
 
 *.o
 /TMessagesProj/.cxx/
+
+TMessagesProj/.DS_Store
+
+TMessagesProj/afat/
+
+
+TMessagesProj/src/.DS_Store
+
+.DS_Store
+
+TMessagesProj/jni/voip/

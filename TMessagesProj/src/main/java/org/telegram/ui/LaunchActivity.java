@@ -75,6 +75,7 @@ import com.google.android.gms.ads.initialization.OnInitializationCompleteListene
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.appindexing.Action;
 import com.google.firebase.appindexing.FirebaseUserActions;
 import com.google.firebase.appindexing.builders.AssistActionBuilder;
@@ -256,7 +257,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
     protected void onCreate(Bundle savedInstanceState) {
         ApplicationLoader.postInitApplication();
         AndroidUtilities.checkDisplaySize(this, getResources().getConfiguration());
-
+        FirebaseAnalytics.getInstance(this);
         List<String> testDeviceIds = Arrays.asList("A2569C0911A25FA0B433A8DB31F01B64");
         RequestConfiguration configuration = new RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build();
         MobileAds.setRequestConfiguration(configuration);

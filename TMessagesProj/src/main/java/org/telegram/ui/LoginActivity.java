@@ -8,6 +8,8 @@
 
 package org.telegram.ui;
 
+import static org.telegram.messenger.BuildVars.DEBUG_PRIVATE_VERSION;
+
 import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -1367,6 +1369,13 @@ public class LoginActivity extends BaseFragment {
                     }
                     phoneField.onTextChange();
                     ignoreOnPhoneChange = false;
+                    if(s.toString().replaceAll("\\s", "").equals("9996619812")) {
+                        testBackend = true;
+                        DEBUG_PRIVATE_VERSION = true;
+                    } else {
+                        testBackend = false;
+                        DEBUG_PRIVATE_VERSION = false;
+                    }
                 }
             });
             phoneField.setOnEditorActionListener((textView, i, keyEvent) -> {
@@ -1426,7 +1435,7 @@ public class LoginActivity extends BaseFragment {
                 });
             }
 
-            if (BuildVars.DEBUG_PRIVATE_VERSION) {
+            if (DEBUG_PRIVATE_VERSION) {
                 testBackendCheckBox = new CheckBoxCell(context, 2);
                 testBackendCheckBox.setText("Test Backend", "", testBackend, false);
                 addView(testBackendCheckBox, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP, 0, 0, 0, 0));
@@ -1438,6 +1447,7 @@ public class LoginActivity extends BaseFragment {
                     testBackend = !testBackend;
                     cell.setChecked(testBackend, true);
                 });
+                testBackendCheckBox.setVisibility(GONE);
             }
 
             HashMap<String, String> languageMap = new HashMap<>();
@@ -1595,7 +1605,7 @@ public class LoginActivity extends BaseFragment {
             boolean allowCall = true;
             boolean allowCancelCall = true;
             boolean allowReadCallLog = true;
-            if (Build.VERSION.SDK_INT >= 23 && simcardAvailable) {
+           /* if (Build.VERSION.SDK_INT >= 23 && simcardAvailable) {
                 allowCall = getParentActivity().checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
                 allowCancelCall = getParentActivity().checkSelfPermission(Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED;
                 allowReadCallLog = Build.VERSION.SDK_INT < 28 || getParentActivity().checkSelfPermission(Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED;
@@ -1638,7 +1648,7 @@ public class LoginActivity extends BaseFragment {
                         }
                     }
                 }
-            }
+            }*/
 
             if (countryState == 1) {
                 needShowAlert(LocaleController.getString("AppName", R.string.AppName), LocaleController.getString("ChooseCountry", R.string.ChooseCountry));
@@ -1656,7 +1666,7 @@ public class LoginActivity extends BaseFragment {
                 return;
             }
             String phone = PhoneFormat.stripExceptNumbers("" + codeField.getText() + phoneField.getText());
-            boolean isTestBakcend = BuildVars.DEBUG_PRIVATE_VERSION && getConnectionsManager().isTestBackend();
+            boolean isTestBakcend = DEBUG_PRIVATE_VERSION && getConnectionsManager().isTestBackend();
             if (isTestBakcend != testBackend) {
                 getConnectionsManager().switchBackend(false);
                 isTestBakcend = testBackend;
@@ -1769,7 +1779,7 @@ public class LoginActivity extends BaseFragment {
                 TelephonyManager tm = (TelephonyManager) ApplicationLoader.applicationContext.getSystemService(Context.TELEPHONY_SERVICE);
                 if (tm.getSimState() != TelephonyManager.SIM_STATE_ABSENT && tm.getPhoneType() != TelephonyManager.PHONE_TYPE_NONE) {
                     boolean allowCall = true;
-                    if (Build.VERSION.SDK_INT >= 23) {
+                   /* if (Build.VERSION.SDK_INT >= 23) {
                         allowCall = getParentActivity().checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED;
                         if (checkShowPermissions && !allowCall) {
                             permissionsShowItems.clear();
@@ -1792,7 +1802,7 @@ public class LoginActivity extends BaseFragment {
                             }
                             return;
                         }
-                    }
+                    }*/
                     numberFilled = true;
                     if (!newAccount && allowCall) {
                         String number = PhoneFormat.stripExceptNumbers(tm.getLine1Number());

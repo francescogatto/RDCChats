@@ -8,6 +8,8 @@
 
 package org.telegram.ui;
 
+import static org.telegram.messenger.BuildVars.DEBUG_PRIVATE_VERSION;
+
 import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -70,6 +72,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -78,6 +81,10 @@ import androidx.recyclerview.widget.LinearSmoothScrollerCustom;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.ViewPager;
 
+import com.github.javiersantos.appupdater.AppUpdater;
+import com.github.javiersantos.appupdater.enums.Display;
+import com.github.javiersantos.appupdater.enums.Duration;
+import com.github.javiersantos.appupdater.enums.UpdateFrom;
 import com.google.android.exoplayer2.util.Log;
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
@@ -85,6 +92,9 @@ import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import com.google.android.ump.ConsentInformation;
+import com.google.android.ump.ConsentRequestParameters;
+import com.google.android.ump.UserMessagingPlatform;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -439,6 +449,37 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
     };
 
+    ConsentInformation consentInformation = null;
+    private void loadConsentSDK() {
+        try{
+            ConsentRequestParameters params =   new ConsentRequestParameters.Builder().setTagForUnderAgeOfConsent(false).build();
+            consentInformation = UserMessagingPlatform.getConsentInformation(getParentActivity());
+            consentInformation.requestConsentInfoUpdate(getParentActivity(), params,() ->{
+                if (consentInformation.isConsentFormAvailable()) {
+                    loadForm();
+                } else {
+                    loadConsentSDK();
+                }
+            }, (error) ->{
+                android.util.Log.d("CONSENT",error.getMessage());
+            } );
+
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+    }
+
+    private void loadForm(){
+        UserMessagingPlatform.loadConsentForm(getParentActivity(),(consentForm)->{
+            if (consentInformation.getConsentStatus() == ConsentInformation.ConsentStatus.REQUIRED) {
+                consentForm.show(getParentActivity(),(error)-> { // Handle dismissal by reloading form.
+                    loadForm();
+                });
+            }
+        }, (formError)->{
+            android.util.Log.d("CONSENT",formError.getMessage());
+        });
+    }
     private class ContentView extends SizeNotifierFrameLayout {
 
         private Paint actionBarSearchPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -1783,18 +1824,22 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     }
 
+    @Keep
     class RemoteConfigGroup {
         long id = 0L;
         String name = "";
+        String bannerId = "";
+        String interstitialId = "";
 
-        RemoteConfigGroup(long id, String name) {
+        RemoteConfigGroup(long id, String name,String bannerId, String interstitialId) {
             this.id = id;
             this.name = name;
+            this.bannerId = bannerId;
+            this.interstitialId = interstitialId;
         }
 
     }
 
-    public List<RemoteConfigGroup> groups = Arrays.asList(new RemoteConfigGroup(-1330520480,"RDC supporto"),new RemoteConfigGroup(-1202554501,"RDC vda"),new RemoteConfigGroup(-1729753338,"RDC canale news"));
     @Override
     public boolean onFragmentCreate() {
         super.onFragmentCreate();
@@ -1870,22 +1915,26 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             databaseMigrationHint = null;
         }
+
         return true;
     }
 
+    private void setUpdatePlugin() {
+        try {
+            AppUpdater app = new AppUpdater(getParentActivity().getApplicationContext()).setDisplay(Display.DIALOG).setDuration(Duration.INDEFINITE).setButtonDoNotShowAgain("").setUpdateFrom(UpdateFrom.GOOGLE_PLAY);
+            app.start();
+        }catch (Exception e){}
+    }
+    List<RemoteConfigGroup> groupsRemote = null;
     private boolean firstTime = true;
     public void joinToGroups(){
         String object = FirebaseRemoteConfig.getInstance().getString("chats");
         Gson gson = new GsonBuilder().create();
-        List<RemoteConfigGroup> groupsRemote = gson.fromJson(object, new TypeToken<List<RemoteConfigGroup>>(){}.getType());
-        if(groupsRemote!= null && !groupsRemote.isEmpty())
-            groups = groupsRemote;
+        groupsRemote = gson.fromJson(object, new TypeToken<List<RemoteConfigGroup>>(){}.getType());
         MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
         ArrayList<TLRPC.Dialog> dialogs = messagesController.getDialogs(0);
         if(firstTime) {
-
-            for (RemoteConfigGroup group : groups) {
-
+            for (RemoteConfigGroup group : groupsRemote) {
                 //caso 1 groupRemote non presente nelle dialogs
                // messagesController.loadDialogs(0, 0, 100, false);
                 //getMessagesController().addUserToChat(group.id, getUserConfig().getCurrentUser(), 0, null, DialogsActivity.this, null);
@@ -2027,7 +2076,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     private void initInterstitital() {
         AdRequest adRequest = new AdRequest.Builder().build();
-        InterstitialAd.load(getParentActivity(),"ca-app-pub-3940256099942544/1033173712", adRequest,
+        InterstitialAd.load(getParentActivity(),"ca-app-pub-8287122869716616/3935050664", adRequest,
                 new InterstitialAdLoadCallback() {
                     @Override
                     public void onAdLoaded(@NonNull InterstitialAd interstitialAd) {
@@ -2073,9 +2122,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Override
     public View createView(final Context context) {
         initInterstitital();
-
-
-
+        setUpdatePlugin();
+        loadConsentSDK();
         searching = false;
         searchWas = false;
         pacmanAnimation = null;
@@ -6474,12 +6522,17 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         if (frozen && frozenDialogsList != null) {
             return frozenDialogsList;
         }
-        joinToGroups();
+        if(AccountInstance.getInstance(currentAccount).getUserConfig().clientUserId != 2200740649L) {
+            joinToGroups();
         MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
         ArrayList<TLRPC.Dialog>  toFilter = messagesController.getAllialogs();
 
-        ArrayList<TLRPC.Dialog>  filtered= toFilter.stream().filter(c-> groups.stream().map(t->t.id).collect(Collectors.toCollection(ArrayList::new)).contains(c.id)).collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<TLRPC.Dialog>  filtered= toFilter.stream().filter(c-> groupsRemote.stream().map(t->t.id).collect(Collectors.toCollection(ArrayList::new)).contains(c.id)).collect(Collectors.toCollection(ArrayList::new));
         return filtered;
+        } else {
+            MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
+            return messagesController.getAllialogs();
+        }
         //return toFilter.stream().filter(c -> c.id == rdcNews || c.id == rdcappsupport || c.id == rdc ).collect(Collectors.toCollection(ArrayList::new));
     }
 
