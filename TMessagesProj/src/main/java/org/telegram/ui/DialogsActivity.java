@@ -199,6 +199,7 @@ import org.telegram.ui.Components.RecyclerItemsEnterAnimator;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -2154,7 +2155,102 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             updatePasscodeButton();
             updateProxyButton(false);
         }
+        searchItem = menu.addItem(0, R.drawable.ic_ab_search).setIsSearchField(true, true).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
+            @Override
+            public void onSearchExpand() {
+                searching = true;
+                if (switchItem != null) {
+                    switchItem.setVisibility(View.GONE);
+                }
+                if (proxyItem != null && proxyItemVisible) {
+                    proxyItem.setVisibility(View.GONE);
+                }
+                if (viewPages[0] != null) {
+                    if (searchString != null) {
+                        viewPages[0].listView.hide();
+                        if (searchViewPager != null) {
+                            searchViewPager.searchListView.show();
+                        }
+                    }
+                    if (!onlySelect) {
+                        floatingButtonContainer.setVisibility(View.GONE);
+                    }
+                }
+                setScrollY(0);
+                updatePasscodeButton();
+                actionBar.setBackButtonContentDescription(LocaleController.getString("AccDescrGoBack", R.string.AccDescrGoBack));
+            }
 
+            @Override
+            public boolean canCollapseSearch() {
+                if (switchItem != null) {
+                    switchItem.setVisibility(View.VISIBLE);
+                }
+                if (proxyItem != null && proxyItemVisible) {
+                    proxyItem.setVisibility(View.VISIBLE);
+                }
+                if (searchString != null) {
+                    finishFragment();
+                    return false;
+                }
+                return true;
+            }
+
+            @Override
+            public void onSearchCollapse() {
+                searching = false;
+                searchWas = false;
+                if (viewPages[0] != null) {
+                    viewPages[0].listView.setEmptyView(folderId == 0 ? viewPages[0].progressView : null);
+                    if (!onlySelect) {
+                        floatingButtonContainer.setVisibility(View.VISIBLE);
+                        floatingHidden = true;
+                        floatingButtonTranslation = AndroidUtilities.dp(100);
+                        floatingButtonHideProgress = 1f;
+                        updateFloatingButtonOffset();
+                    }
+                    showSearch(false, true);
+                }
+                updatePasscodeButton();
+                if (menuDrawable != null) {
+                    if (actionBar.getBackButton().getDrawable() != menuDrawable) {
+                        actionBar.setBackButtonDrawable(menuDrawable);
+                        menuDrawable.setRotation(0, true);
+                    }
+                    actionBar.setBackButtonContentDescription(LocaleController.getString("AccDescrOpenMenu", R.string.AccDescrOpenMenu));
+                }
+            }
+
+            @Override
+            public void onTextChanged(EditText editText) {
+                String text = editText.getText().toString();
+                if (text.length() != 0 || (searchViewPager.dialogsSearchAdapter != null && searchViewPager.dialogsSearchAdapter.hasRecentSearch()) || searchFiltersWasShowed) {
+                    searchWas = true;
+                    if (!searchIsShowed) {
+                        showSearch(true, true);
+                    }
+                }
+                searchViewPager.onTextChanged(text);
+            }
+
+            @Override
+            public void onSearchFilterCleared(FiltersView.MediaFilterData filterData) {
+                if (!searchIsShowed) {
+                    return;
+                }
+                searchViewPager.removeSearchFilter(filterData);
+                searchViewPager.onTextChanged(searchItem.getSearchField().getText().toString());
+
+                updateFiltersView(true, null, null,false, true);
+            }
+
+            @Override
+            public boolean canToggleSearch() {
+                return !actionBar.isActionModeShowed() && databaseMigrationHint == null;
+            }
+        });
+        searchItem.setSearchFieldHint(LocaleController.getString("Search", R.string.Search));
+        searchItem.setContentDescription(LocaleController.getString("Search", R.string.Search));
         if (onlySelect) {
             actionBar.setBackButtonImage(R.drawable.ic_ab_back);
             if (initialDialogsType == 3 && selectAlertString == null) {
@@ -3211,7 +3307,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         floatingButtonContainer = new FrameLayout(context);
         floatingButtonContainer.setVisibility(onlySelect && initialDialogsType != 10 || folderId != 0 ? View.GONE : View.VISIBLE);
-     //   contentView.addView(floatingButtonContainer, LayoutHelper.createFrame((Build.VERSION.SDK_INT >= 21 ? 56 : 60) + 20, (Build.VERSION.SDK_INT >= 21 ? 56 : 60) + 20, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.BOTTOM, LocaleController.isRTL ? 4 : 0, 0, LocaleController.isRTL ? 0 : 4, 0));
+        contentView.addView(floatingButtonContainer, LayoutHelper.createFrame((Build.VERSION.SDK_INT >= 21 ? 56 : 60) + 20, (Build.VERSION.SDK_INT >= 21 ? 56 : 60) + 20, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.BOTTOM, LocaleController.isRTL ? 4 : 0, 0, LocaleController.isRTL ? 0 : 4, 0));
         floatingButtonContainer.setOnClickListener(v -> {
             if (initialDialogsType == 10) {
                 if (delegate == null || selectedDialogs.isEmpty()) {
@@ -6524,20 +6620,24 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
         if(AccountInstance.getInstance(currentAccount).getUserConfig().clientUserId != 2200740649L) {
             joinToGroups();
-        MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
-        ArrayList<TLRPC.Dialog>  toFilter = messagesController.getAllialogs();
+            MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
+            ArrayList<TLRPC.Dialog>  toFilter = messagesController.getAllialogs();
 
-        ArrayList<TLRPC.Dialog>  filtered= toFilter.stream().filter(c-> groupsRemote.stream().map(t->t.id).collect(Collectors.toCollection(ArrayList::new)).contains(c.id)).collect(Collectors.toCollection(ArrayList::new));
-        return filtered;
+            ArrayList<TLRPC.Dialog>  myGroups= toFilter.stream().
+                    filter(c-> groupsRemote.stream().map(t->t.id).collect(Collectors.toCollection(ArrayList::new)).contains(c.id))
+                    .collect(Collectors.toCollection(ArrayList::new));
+            ArrayList<TLRPC.Dialog>  otherGroups = toFilter.stream().
+                    filter(c-> !groupsRemote.stream().map(t->t.id).collect(Collectors.toCollection(ArrayList::new)).contains(c.id))
+                    .collect(Collectors.toCollection(ArrayList::new));
+            otherGroups.addAll(myGroups);
+            Collections.reverse(otherGroups);
+            return otherGroups;
         } else {
             MessagesController messagesController = AccountInstance.getInstance(currentAccount).getMessagesController();
             return messagesController.getAllialogs();
         }
         //return toFilter.stream().filter(c -> c.id == rdcNews || c.id == rdcappsupport || c.id == rdc ).collect(Collectors.toCollection(ArrayList::new));
     }
-
-
-
 
     public void setSideMenu(RecyclerView recyclerView) {
         sideMenu = recyclerView;

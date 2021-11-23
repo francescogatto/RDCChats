@@ -1883,9 +1883,9 @@
     <string name="LanguageUnknownCustomAlert">Sfortunatamente, questa lingua personalizza (**%1$s**) non contiene dati per RDC Chat Android.</string>
     <string name="AskAQuestionInfo">Per favore nota che il supporto di RDC Chat è gestito da volontari. Proviamo a rispondere quanto prima, ma potrebbe volerci del tempo.\n\nDai un\'occhiata alle <![CDATA[<a href=\"https://RDC Chat.org/faq/it#domande-generali\">FAQ di RDC Chat</a>]]>: contengono suggerimenti importanti per <![CDATA[<a href=\"https://RDC Chat.org/faq/it#risoluzione-dei-problemi\">risolvere i problemi</a>]]> e risposte a quasi tutte le domande.</string>
     <string name="AskButton">Chiedi a un volontario</string>
-    <string name="TelegramFAQ">FAQ RDC Chat</string>
-    <string name="TelegramFaq">FAQ RDC Chat</string>
-    <string name="TelegramFeatures">Funzioni di RDC Chat</string>
+    <string name="TelegramFAQ">FAQ Telegram</string>
+    <string name="TelegramFaq">FAQ Telegram</string>
+    <string name="TelegramFeatures">Funzioni di Telegram</string>
     <string name="TelegramFeaturesUrl">https://t.me/TelegramTipsIT</string>
     <string name="AddAccount">Aggiungi account</string>
     <string name="SelectAccount">Seleziona Account</string>
@@ -2018,7 +2018,7 @@
     <string name="SmartNotificationsAlert">Frequenza avviso sonoro</string>
     <string name="SmartNotificationsDetail">%1$s ogni %2$s</string>
     <string name="SecretWebPage">Anteprime link</string>
-    <string name="SecretWebPageInfo">Le anteprime dei link saranno generate dai server di RDC Chat. Non archiviamo dati sui link che invii.</string>
+    <string name="SecretWebPageInfo">Le anteprime dei link saranno generate dai server di Telegram. Non archiviamo dati sui link che invii.</string>
     <string name="SecretChat">Chat segrete</string>
     <string name="ChromeCustomTabs">Browser in-app</string>
     <string name="ChromeCustomTabsInfo">Apri i link esterni all\'interno dell\'app</string>
@@ -3373,7 +3373,7 @@
     <string name="Page4Title">Sicuro</string>
     <string name="Page5Title">Potente</string>
     <string name="Page6Title">Basato sul cloud</string>
-    <string name="Page1Message">L\'app di messaggistica del **Reddito di Cittadinanza**. È **gratuita** e **sicura**.</string>
+    <string name="Page1Message">L\'app di messaggistica basata su Telegram e ottimizzata per i percettori del **Reddito di Cittadinanza**</string>
     <string name="Page2Message">**RDC Chat** ti consente di rimanere sempre aggiornato sul Reddito.</string>
     <string name="Page3Message">**RDC Chat** sarà sempre gratuito.\nNessuna pubblicità. Nessun abbonamento.</string>
     <string name="Page4Message">**RDC Chat** la tua privacy è al sicuro e nessun utente puà mandarti messaggi in privato</string>
