@@ -18,3 +18,5 @@ TMessagesProj/src/.DS_Store
 .DS_Store
 
 TMessagesProj/jni/voip/
+
+gradle.properties
